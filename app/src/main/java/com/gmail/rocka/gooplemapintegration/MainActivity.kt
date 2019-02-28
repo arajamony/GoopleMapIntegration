@@ -40,6 +40,7 @@ class MainActivity : AppCompatActivity() {
 
     lateinit var mapFragment: SupportMapFragment
     lateinit var googleMap:GoogleMap
+    private var polyLine: Polyline? = null
 
     private var permissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
 
@@ -177,11 +178,12 @@ private fun DrawPolyLine(result: List<List<LatLng>>) {
         googleMap.addMarker(MarkerOptions().position(result.first().first()).icon(BitmapDescriptorFactory.fromResource(R.drawable.home_address_24)))
         googleMap.addMarker(MarkerOptions().position(result.last().last()).icon(BitmapDescriptorFactory.fromResource(R.drawable.destination_24)))
         for (i in result.indices) {
-            lineoption.addAll(result[i])
+            lineoption.add(result[i][i])
             lineoption.width(10f)
             lineoption.color(Color.BLUE)
             lineoption.geodesic(true)
-            setAnimation(googleMap,result[i])
+            polyLine = googleMap.addPolyline(lineoption)
+            setAnimation(googleMap, result[i])
         }
 
         /*lineoption.startCap(CustomCap(BitmapDescriptorFactory.fromResource(R.drawable.home_address_24)))
@@ -226,6 +228,7 @@ private fun DrawPolyLine(result: List<List<LatLng>>) {
                 Log.d("animateMarker","Value of i ${i}")*/
                 if (i < directionPoint.size) {
                     marker.setPosition(directionPoint[i])
+                    updatePolyLine(directionPoint[i])
                     handler.postDelayed(this, 1000)
                 }
                 else{
@@ -249,6 +252,19 @@ private fun DrawPolyLine(result: List<List<LatLng>>) {
                 }*/
             }
         })
+    }
+
+    /*private val rectOptions = PolylineOptions()
+    private fun initializePolyLine(): Polyline {
+        rectOptions.add(markers.get(0).getPosition())
+        return googleMap.addPolyline(rectOptions)
+    }*/
+
+    fun updatePolyLine(latLng:LatLng){
+        var points: List<LatLng>
+        points = polyLine!!.points
+        points.add(latLng)
+        polyLine!!.setPoints(points);
     }
 
     public fun decodePolyline(encoded: String): List<LatLng> {
