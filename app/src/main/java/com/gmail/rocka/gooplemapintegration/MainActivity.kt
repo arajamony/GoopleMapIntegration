@@ -2,20 +2,14 @@ package com.gmail.rocka.gooplemapintegration
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Activity
-import android.content.Context
-import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.graphics.Color
-import android.graphics.Paint
-import android.os.AsyncTask
 import android.os.Build
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import com.gmail.rocka.gooplemapintegration.model.GoogleMapDTO
-import com.gmail.rocka.gooplemapintegration.model.GoogleMapModel
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -28,7 +22,16 @@ import retrofit2.Callback
 import retrofit2.Response
 import services.GoogleMapService
 import services.ServiceBuilder
-
+import android.support.v4.os.HandlerCompat.postDelayed
+import android.os.SystemClock
+import android.view.animation.LinearInterpolator
+import com.google.android.gms.maps.Projection
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.google.android.gms.maps.model.MarkerOptions
+import android.graphics.Bitmap
+import android.os.Handler
 
 
 private const val PERMISSION_REQUEST = 10
@@ -153,8 +156,10 @@ class MainActivity : AppCompatActivity() {
                             e.printStackTrace()
                         }
                     }
-                    if (!result.isNullOrEmpty())
+                    if (!result.isNullOrEmpty()) {
                         DrawPolyLine(result)
+                        //setAnimation(googleMap,result[0])
+                    }
                 } else {
                     Toast.makeText(this@MainActivity, "Failed to retrive the Direction", Toast.LENGTH_SHORT).show()
                 }
@@ -169,21 +174,82 @@ class MainActivity : AppCompatActivity() {
 private fun DrawPolyLine(result: List<List<LatLng>>) {
     val lineoption = PolylineOptions()
     if(!result.isNullOrEmpty()) {
+        googleMap.addMarker(MarkerOptions().position(result.first().first()).icon(BitmapDescriptorFactory.fromResource(R.drawable.home_address_24)))
+        googleMap.addMarker(MarkerOptions().position(result.last().last()).icon(BitmapDescriptorFactory.fromResource(R.drawable.destination_24)))
         for (i in result.indices) {
             lineoption.addAll(result[i])
             lineoption.width(10f)
             lineoption.color(Color.BLUE)
             lineoption.geodesic(true)
+            setAnimation(googleMap,result[i])
         }
 
-        lineoption.startCap(CustomCap(BitmapDescriptorFactory.fromResource(R.drawable.home_address_24)))
-        lineoption.endCap(CustomCap(BitmapDescriptorFactory.fromResource(R.drawable.destination_24)))
-        /*googleMap.addMarker(MarkerOptions().position(result.first().first()).icon(BitmapDescriptorFactory.fromResource(R.drawable.icons8_home_24)))
-    googleMap.addMarker(MarkerOptions().position(result.last().last()).icon(BitmapDescriptorFactory.fromResource(R.drawable.icons8_home_24)))*/
-        googleMap.addPolyline(lineoption)
-        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(result[0][0], 16F))
+        /*lineoption.startCap(CustomCap(BitmapDescriptorFactory.fromResource(R.drawable.home_address_24)))
+        lineoption.endCap(CustomCap(BitmapDescriptorFactory.fromResource(R.drawable.destination_24)))*/
+
+        /*googleMap.addPolyline(lineoption)
+        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(result[0][0], 16F))*/
     }
 }
+
+    fun setAnimation(myMap: GoogleMap, directionPoint: List<LatLng>) {
+        val marker = myMap.addMarker(
+            MarkerOptions()
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.car_top_view_24))
+                .position(directionPoint[0])
+                .flat(true)
+        )
+
+        myMap.animateCamera(CameraUpdateFactory.newLatLngZoom(directionPoint[0], 16f))
+
+        animateMarker(myMap, marker, directionPoint, false)
+    }
+
+
+    private fun animateMarker(
+        myMap: GoogleMap, marker: Marker, directionPoint: List<LatLng>,
+        hideMarker: Boolean
+    ) {
+        val handler = Handler()
+        val start = SystemClock.uptimeMillis()
+        val proj = myMap.projection
+        val duration: Long = 30000
+        val interpolator = LinearInterpolator()
+        Log.d("animateMarker","Starttime ${start}")
+        handler.post(object : Runnable {
+            internal var i = 0
+
+            override fun run() {
+               /* val elapsed = SystemClock.uptimeMillis() - start
+                Log.d("animateMarker","Elapsed Time ${elapsed}")
+                val t = interpolator.getInterpolation(elapsed.toFloat() / duration)
+                Log.d("animateMarker","Value of i ${i}")*/
+                if (i < directionPoint.size) {
+                    marker.setPosition(directionPoint[i])
+                    handler.postDelayed(this, 1000)
+                }
+                else{
+                    marker.isVisible = !hideMarker
+                }
+                i++
+
+                /*Log.d("animateMarker","Value of t ${t}")
+                if (t < 1.0) {
+                    // Post again 16ms later.
+                    handler.postDelayed(this, 1000)
+                } else {
+
+                    marker.isVisible = !hideMarker
+
+                    if (hideMarker) {
+                        marker.isVisible = false
+                    } else {
+                        marker.isVisible = true
+                    }
+                }*/
+            }
+        })
+    }
 
     public fun decodePolyline(encoded: String): List<LatLng> {
 
@@ -223,3 +289,6 @@ private fun DrawPolyLine(result: List<List<LatLng>>) {
     }
 
 }
+
+
+
