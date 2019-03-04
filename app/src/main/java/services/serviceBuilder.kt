@@ -15,7 +15,7 @@ object ServiceBuilder {
 
     //Base URL for Connecting the service
     private const val URL = "http://18.191.209.98/webapp1_dev/api/"
-    //private const val URL = "http://192.168.1.2/WebApp1/api/"
+    //private const val URL = "http://192.168.1.4/WebApp1/api/"
 
     //Create Logger
     private val logger: HttpLoggingInterceptor = HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY)
